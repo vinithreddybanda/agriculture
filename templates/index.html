@@ -157,19 +157,29 @@
       </div>
       <div class="mb-3">
         <label for="temperature" class="form-label">Temperature (°C)</label>
-        <input type="number" class="form-control" id="temperature" name="temperature" step="0.1" required>
+        <input type="number" class="form-control" id="temperature" name="temperature" required>
       </div>
-      <button type="submit">Predict</button>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn btn-success">Predict Price</button>
     </form>
+
+    <!-- Prediction Result -->
     {% if prediction_text %}
-    <div class="result">{{ prediction_text }}</div>
+      <div class="result">
+        <p>{{ prediction_text }}</p>
+      </div>
     {% endif %}
 
-    <!-- Decorative Images -->
+    <!-- Optional Decorative Images -->
     <div class="decorative-images">
-      <img src="{{ url_for('static', filename='images/cropanimated.png') }}" alt="Vegetable Image 1">
-      <img src="{{ url_for('static', filename='images/paddyanimate.webp') }}" alt="Vegetable Image 2">
+      <img src="{{ url_for('static', filename='images/vegetable1.png') }}" alt="Vegetable 1">
+      <img src="{{ url_for('static', filename='images/vegetable2.webp') }}" alt="Vegetable 2">
     </div>
   </div>
+
+  <!-- Bootstrap JS & jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
