@@ -1,35 +1,55 @@
 from flask import Flask, request, render_template
-import numpy as np
-import pandas as pd  # type: ignore
+import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
 
 app = Flask(__name__)
 
 # Define column names for the input features
-column_names = ['Area', 'Production', 'GDP', 'Annual Growth Rate', 'Inflation', 'Rainfall', 'Temperature']
+column_names = ['Vegetable', 'Area (hectares)', 'Production (tons)', 'GDP (₹)', 
+                'Annual Growth Rate (%)', 'Inflation Rate (%)', 
+                'Rainfall (mm)', 'Temperature (°C)']
 
-# Load the dataset from a CSV file
-data = pd.read_csv('crop_data.csv')
+# Load data from a CSV file
+data = pd.read_csv('./vegetable_prices_dataset.csv')
 
-# Separate features (X) and target (y)
-X = data[column_names]
-y = data['Crop Price']
+# Separate features and target
+X_train = data[column_names]
+y_train = data['Target Price (₹)']
 
-# Initialize and fit the pipeline with training data
-my_pipeline = Pipeline([
+# Define preprocessing for numerical and categorical columns
+numeric_features = ['Area (hectares)', 'Production (tons)', 'GDP (₹)', 
+                    'Annual Growth Rate (%)', 'Inflation Rate (%)', 
+                    'Rainfall (mm)', 'Temperature (°C)']
+numeric_transformer = Pipeline(steps=[
     ('imputer', SimpleImputer(strategy='mean')),
     ('scaler', StandardScaler())
 ])
 
-# Fit the pipeline on the training data
-X_scaled = my_pipeline.fit_transform(X)
+categorical_features = ['Vegetable']
+categorical_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='most_frequent')),
+    ('onehot', OneHotEncoder(handle_unknown='ignore'))
+])
 
-# Train the Random Forest model
-model = RandomForestRegressor()
-model.fit(X_scaled, y)
+# Combine preprocessors in a column transformer
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', numeric_transformer, numeric_features),
+        ('cat', categorical_transformer, categorical_features)
+    ])
+
+# Create the final pipeline
+pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('model', RandomForestRegressor())
+])
+
+# Fit the pipeline on the training data
+pipeline.fit(X_train, y_train)
 
 @app.route('/')
 def home():
@@ -37,20 +57,15 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    # Extract data from form as a list of float values
-    input_features = [float(x) for x in request.form.values()]
+    # Extract data from form
+    input_data = [x for x in request.form.values()]
+    input_df = pd.DataFrame([input_data], columns=column_names)
     
-    # Convert input features to DataFrame to ensure correct column names
-    input_df = pd.DataFrame([input_features], columns=column_names)
-    
-    # Preprocess the input data with the fitted pipeline
-    input_prepared = my_pipeline.transform(input_df)
-    
-    # Make the prediction
-    prediction = model.predict(input_prepared)
-    output = round(prediction[0], 2)
+    # Preprocess and make prediction
+    prediction = pipeline.predict(input_df)
+    output = round(prediction[0]*1000, 2)
 
-    return render_template('index.html', prediction_text=f'Predicted Crop Price: ₹{output}')
+    return render_template('index.html', prediction_text=f'Predicted Vegetable Price: ₹{output}')
 
 if __name__ == "__main__":
     app.run(debug=True)
