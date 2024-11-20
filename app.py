@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -11,22 +11,25 @@ app = Flask(__name__)
 # Define column names for the input features
 column_names = ['Area', 'Production', 'GDP', 'Annual Growth Rate', 'Inflation', 'Rainfall', 'Temperature']
 
+# Load the dataset from a CSV file
+data = pd.read_csv('crop_data.csv')
+
+# Separate features (X) and target (y)
+X = data[column_names]
+y = data['Crop Price']
+
 # Initialize and fit the pipeline with training data
 my_pipeline = Pipeline([
     ('imputer', SimpleImputer(strategy='mean')),
     ('scaler', StandardScaler())
 ])
 
-# Sample training data for demonstration (replace with actual data for real use)
-X_train = np.array([[30, 50, 2.5, 3.0, 1.2, 800, 25], [3500, 16000, 3.0, 3.2, 2.0, 900, 26], [4000, 18000, 3.5, 3.5, 2.5, 1000, 27]])
-y_train = np.array([1000, 1050, 1100])
-
 # Fit the pipeline on the training data
-X_train_scaled = my_pipeline.fit_transform(X_train)
+X_scaled = my_pipeline.fit_transform(X)
 
 # Train the Random Forest model
 model = RandomForestRegressor()
-model.fit(X_train_scaled, y_train)
+model.fit(X_scaled, y)
 
 @app.route('/')
 def home():
